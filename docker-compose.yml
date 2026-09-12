@@ -1,0 +1,25 @@
+services:
+  # 纯前端裁决板：nginx 托管构建产物，所有判断均在浏览器本地完成
+  web:
+    build:
+      context: .
+      target: web
+    ports:
+      # WEB_PORT 可覆盖宿主端口，默认 8080
+      - "${WEB_PORT:-8080}:80"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost/"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+  # 一次性验收服务：跑完 Vitest + Playwright 即退出
+  verify:
+    build:
+      context: .
+      target: verify
+    depends_on:
+      web:
+        condition: service_healthy
+    environment:
+      BASE_URL: http://web
